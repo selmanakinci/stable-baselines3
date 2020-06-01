@@ -18,7 +18,7 @@ KEY_VALUES = {
     "g": np.array([[[1]]]),
 }
 
-LOG_DIR = '/tmp/stable_baselines3/'
+LOG_DIR = 'logs_msa/stable_baselines3/'
 
 
 def test_main():

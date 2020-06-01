@@ -14,11 +14,13 @@ def test_td3(action_noise):
     model.learn(total_timesteps=1000, eval_freq=500)
 
 
-@pytest.mark.parametrize("model_class", [A2C, PPO])
-@pytest.mark.parametrize("env_id", ['CartPole-v1', 'Pendulum-v0'])
+#@pytest.mark.parametrize("model_class", [A2C, PPO])
+#@pytest.mark.parametrize("env_id", ['CartPole-v1', 'Pendulum-v0'])
+@pytest.mark.parametrize("model_class", [A2C])
+@pytest.mark.parametrize("env_id", [ 'Pendulum-v0'])
 def test_onpolicy(model_class, env_id):
-    model = model_class('MlpPolicy', env_id, seed=0, policy_kwargs=dict(net_arch=[16]), verbose=1, create_eval_env=True)
-    model.learn(total_timesteps=1000, eval_freq=500)
+    model = model_class('MlpPolicy', env_id, seed=0, policy_kwargs=dict(net_arch=[16]), verbose=2, create_eval_env=True)
+    model.learn(total_timesteps=1000, eval_freq=500, eval_log_path= 'log_msa')
 
 
 @pytest.mark.parametrize("ent_coef", ['auto', 0.01])
