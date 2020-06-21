@@ -106,6 +106,9 @@ class Monitor(gym.Wrapper):
                 self.file_handler.flush()
             info['episode'] = ep_info
         self.total_steps += 1
+        #if done and self.total_steps % (1*1000)==0:
+        #    self.env.plot()
+
         return observation, reward, done, info
 
     def close(self):

@@ -14,7 +14,7 @@ from stable_baselines3.common import results_plotter
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.results_plotter import load_results, ts2xy, plot_results
 from stable_baselines3.common.noise import NormalActionNoise
-from stable_baselines3.common.callbacks import BaseCallback
+from stable_baselines3.common.callbacks import (BaseCallback, CustomRansimCallback, EvalCallback)
 
 
 class SaveOnBestTrainingRewardCallback(BaseCallback):
@@ -66,9 +66,9 @@ log_dir = "tmp/"
 os.makedirs(log_dir, exist_ok=True)
 
 # Create and wrap the environment
-#env = gym.make('LunarLanderContinuous-v2')
-env = gym.make('ransim-v0')
-env = Monitor(env, log_dir)
+env = gym.make('LunarLanderContinuous-v2')
+#env = gym.make('ransim-v0')
+#env = Monitor(env, log_dir)
 
 '''
 # Add some action noise for exploration
@@ -80,10 +80,36 @@ model = TD3(MlpPolicy, env, action_noise=action_noise, verbose=0)'''
 model = A2C('MlpPolicy', env, verbose=1)
 
 # Create the callback: check every 1000 steps
-callback = SaveOnBestTrainingRewardCallback(check_freq=100, log_dir=log_dir)
-# Train the agent
-timesteps = 1e4#5
-model.learn(total_timesteps=int(timesteps), callback=callback)
+#callback = SaveOnBestTrainingRewardCallback(check_freq=1000, log_dir=log_dir)
+#ransim_callback = CustomRansimCallback(env, save_freq=1000, save_path=log_dir)
+#eval_env = gym.make('ransim-v0')
+eval_env = gym.make('LunarLanderContinuous-v2')
+eval_callback = EvalCallback(eval_env, best_model_save_path=log_dir,
+                             log_path=log_dir, eval_freq=500)
+'''
+# run baseline algorithm
+baseline_score = 0
+done = False
+observation = env.reset(NO_logging=0)
+while not done:
+    action = 'baseline'
+    observation_, reward, done, info = env.step(action)
+    #if done:
+    #    env.plot()
+    observation = observation_
+    baseline_score += reward
+print('baseline score: %.3f' % baseline_score)'''
 
+# Train the agent
+timesteps = 1*5000 #1e5
+#model.learn(total_timesteps=int(timesteps), callback=ransim_callback)
+model.learn(total_timesteps=int(timesteps))
+
+#fig = plt.figure( )
 plot_results([log_dir], timesteps, results_plotter.X_TIMESTEPS, "A2C ran-sim")
+plt.savefig(log_dir + 'A2C_ran-sim_rewards_plot.png', format="png")
 plt.show()
+
+
+
+episode_rewards, episode_lengths = evaluate_policy(model, env, n_eval_episodes=10, return_episode_rewards=True)
