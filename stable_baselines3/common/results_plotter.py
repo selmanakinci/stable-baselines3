@@ -97,6 +97,33 @@ def plot_curves(xy_list: List[Tuple[np.ndarray, np.ndarray]],
     plt.ylabel("Episode Rewards")
     plt.tight_layout()
 
+def plot_curves_with_baselines(xy_list: List[Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]],
+                x_axis: str, title: str, figsize: Tuple[int, int] = (8, 2)) -> None:
+    """
+    plot the curves
+
+    :param xy_list: (List[Tuple[np.ndarray, np.ndarray]]) the x and y coordinates to plot
+    :param x_axis: (str) the axis for the x and y output
+        (can be X_TIMESTEPS='timesteps', X_EPISODES='episodes' or X_WALLTIME='walltime_hrs')
+    :param title: (str) the title of the plot
+    :param figsize: (Tuple[int, int]) Size of the figure (width, height)
+    """
+
+    plt.figure(title, figsize=figsize)
+    max_x = max(xy[0][-1] for xy in xy_list)
+    min_x = 0
+    for (i, (x, y0, y1, y2, y3)) in enumerate(xy_list):
+        plt.plot(x, y0, linestyle='-', label='A2C')
+        plt.plot(x, y1, linestyle='-', label='MCQI')
+        plt.plot(x, y2, linestyle='-', label='RR')
+        plt.plot(x, y3, linestyle='-', label='PF')
+
+    plt.xlim(min_x, max_x)
+    plt.title(title)
+    plt.xlabel(x_axis)
+    plt.ylabel("Episode Rewards")
+    plt.legend(bbox_to_anchor=(1, 1), loc='upper left')
+    plt.tight_layout()
 
 def plot_results(dirs: List[str], num_timesteps: Optional[int],
                  x_axis: str, task_name: str, figsize: Tuple[int, int] = (8, 2)) -> None:
@@ -119,3 +146,23 @@ def plot_results(dirs: List[str], num_timesteps: Optional[int],
         data_frames.append(data_frame)
     xy_list = [ts2xy(data_frame, x_axis) for data_frame in data_frames]
     plot_curves(xy_list, x_axis, task_name, figsize)
+
+
+def plot_evaluation_results(dirs: List[str], num_timesteps: Optional[int],
+                 x_axis: str, task_name: str, figsize: Tuple[int, int] = (8, 2)) -> None:
+    """
+    Plot the results using csv files from ``Monitor`` wrapper.
+
+    :param dirs: ([str]) the save location of the results to plot
+    :param num_timesteps: (int or None) only plot the points below this value
+    :param x_axis: (str) the axis for the x and y output
+        (can be X_TIMESTEPS='timesteps', X_EPISODES='episodes' or X_WALLTIME='walltime_hrs')
+    :param task_name: (str) the title of the task to plot
+    :param figsize: (Tuple[int, int]) Size of the figure (width, height)
+    """
+
+    data_frames = []
+    data = np.load(dirs)
+    xy_list = data['timesteps'], data['results'][:,0,0], data['mcqi_results'][:,0,0], \
+              data['rr_results'][:,0,0], data['pf_results'][:,0,0]  # no brackets to make it tuple
+    plot_curves_with_baselines([xy_list], x_axis, task_name, figsize)

@@ -231,6 +231,9 @@ class CustomRansimCallback(EventCallback):
         self.evaluations_results = []
         self.evaluations_timesteps = []
         self.evaluations_length = []
+        self.MCQI_eval_results = []
+        self.RR_eval_results = []
+        self.PF_eval_results = []
 
     def _init_callback(self):
         # Does not work in some corner cases, where the wrapper is not the same
@@ -255,31 +258,36 @@ class CustomRansimCallback(EventCallback):
                                                                render=self.render,
                                                                deterministic=self.deterministic,
                                                                return_episode_rewards=True,
-                                                               plot_results=self.plot_results)
+                                                               plot_before_reset=self.plot_results)
             MCQI_episode_rewards, MCQI_episode_lengths = evaluate_baseline('MCQI', self.eval_env,
                                                                n_eval_episodes=self.n_eval_episodes,
                                                                render=self.render,
                                                                deterministic=self.deterministic,
                                                                return_episode_rewards=True,
-                                                               plot_results = self.plot_results)
+                                                               plot_before_reset = self.plot_results)
             RR_episode_rewards, RR_episode_lengths = evaluate_baseline('RR', self.eval_env,
                                                                n_eval_episodes=self.n_eval_episodes,
                                                                render=self.render,
                                                                deterministic=self.deterministic,
                                                                return_episode_rewards=True,
-                                                               plot_results = self.plot_results)
+                                                               plot_before_reset = self.plot_results)
             PF_episode_rewards, PF_episode_lengths = evaluate_baseline('PF', self.eval_env,
                                                                n_eval_episodes=self.n_eval_episodes,
                                                                render=self.render,
                                                                deterministic=self.deterministic,
                                                                return_episode_rewards=True,
-                                                               plot_results = self.plot_results)
+                                                               plot_before_reset = self.plot_results)
             if self.log_path is not None:
                 self.evaluations_timesteps.append(self.num_timesteps)
                 self.evaluations_results.append(episode_rewards)
                 self.evaluations_length.append(episode_lengths)
+                self.MCQI_eval_results.append(MCQI_episode_rewards)
+                self.RR_eval_results.append(RR_episode_rewards)
+                self.PF_eval_results.append(PF_episode_rewards)
                 np.savez(self.log_path, timesteps=self.evaluations_timesteps,
-                         results=self.evaluations_results, ep_lengths=self.evaluations_length)
+                         results=self.evaluations_results, ep_lengths=self.evaluations_length,
+                         mcqi_results=self.MCQI_eval_results, rr_results=self.RR_eval_results,
+                         pf_results=self.PF_eval_results)
 
             mean_reward, std_reward = np.mean(episode_rewards), np.std(episode_rewards)
             mean_ep_length, std_ep_length = np.mean(episode_lengths), np.std(episode_lengths)
