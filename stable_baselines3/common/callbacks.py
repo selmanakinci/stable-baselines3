@@ -11,6 +11,8 @@ from stable_baselines3.common.vec_env import DummyVecEnv, VecEnv, sync_envs_norm
 from stable_baselines3.common.evaluation import evaluate_policy, evaluate_baseline
 from stable_baselines3.common.logger import Logger
 
+from gym.utils import seeding
+
 if typing.TYPE_CHECKING:
     from stable_baselines3.common.base_class import BaseRLModel  # pytype: disable=pyi-error
 
@@ -196,7 +198,7 @@ class CustomRansimCallback(EventCallback):
     :param verbose: (int)
     """
 
-    def __init__(self, eval_env: Union[gym.Env, VecEnv],
+    def __init__(self, eval_env_list: Union[gym.Env, VecEnv],
                  callback_on_new_best: Optional[BaseCallback] = None,
                  n_eval_episodes: int = 1,
                  eval_freq: int = 10000,
@@ -215,14 +217,14 @@ class CustomRansimCallback(EventCallback):
         self.render = render
         self.plot_results = plot_results
 
-        # Convert to VecEnv for consistency
-        if not isinstance(eval_env, VecEnv):
-           eval_env = DummyVecEnv([lambda: eval_env])
+        # # Convert to VecEnv for consistency
+        # if not isinstance(eval_env, VecEnv):
+        #    eval_env = DummyVecEnv([lambda: eval_env])
+        #
+        # if isinstance(eval_env, VecEnv):
+        #     assert eval_env.num_envs == 1, "You must pass only one environment for evaluation"
 
-        if isinstance(eval_env, VecEnv):
-            assert eval_env.num_envs == 1, "You must pass only one environment for evaluation"
-
-        self.eval_env = eval_env
+        self.eval_env_list = eval_env_list
         self.best_model_save_path = best_model_save_path
         # Logs will be written in ``evaluations.npz``
         if log_path is not None:
@@ -235,11 +237,11 @@ class CustomRansimCallback(EventCallback):
         self.RR_eval_results = []
         self.PF_eval_results = []
 
-    def _init_callback(self):
-        # Does not work in some corner cases, where the wrapper is not the same
-        if not isinstance(self.training_env, type(self.eval_env)):
-            warnings.warn("Training and eval env are not of the same type"
-                          f"{self.training_env} != {self.eval_env}")
+    # def _init_callback(self):
+    #     # Does not work in some corner cases, where the wrapper is not the same
+    #     if not isinstance(self.training_env, type(self.eval_env)):
+    #         warnings.warn("Training and eval env are not of the same type"
+    #                       f"{self.training_env} != {self.eval_env}")
 
         # Create folders if needed
         if self.best_model_save_path is not None:
@@ -251,32 +253,39 @@ class CustomRansimCallback(EventCallback):
 
         if self.eval_freq > 0 and self.n_calls % self.eval_freq == 0:
             # Sync training and eval env if there is VecNormalize
-            sync_envs_normalization(self.training_env, self.eval_env)
-
-            episode_rewards, episode_lengths = evaluate_policy(self.model, self.eval_env,
+            # sync_envs_normalization(self.training_env, self.eval_env)
+            new_seed = seeding.create_seed()
+            episode_rewards, episode_lengths = evaluate_policy(self.model, self.eval_env_list[0],
                                                                n_eval_episodes=self.n_eval_episodes,
                                                                render=self.render,
                                                                deterministic=self.deterministic,
                                                                return_episode_rewards=True,
-                                                               plot_before_reset=self.plot_results)
-            MCQI_episode_rewards, MCQI_episode_lengths = evaluate_baseline('MCQI', self.eval_env,
+                                                               plot_before_reset=self.plot_results,
+                                                               env_seed= new_seed)
+            MCQI_episode_rewards, MCQI_episode_lengths = evaluate_baseline( self.eval_env_list[1],
+                                                               C_ALGO='MCQI',
                                                                n_eval_episodes=self.n_eval_episodes,
                                                                render=self.render,
                                                                deterministic=self.deterministic,
                                                                return_episode_rewards=True,
-                                                               plot_before_reset = self.plot_results)
-            RR_episode_rewards, RR_episode_lengths = evaluate_baseline('RR', self.eval_env,
+                                                               plot_before_reset =  False,
+                                                               env_seed= new_seed)
+            RR_episode_rewards, RR_episode_lengths = evaluate_baseline( self.eval_env_list[2],
+                                                               C_ALGO='RR',
                                                                n_eval_episodes=self.n_eval_episodes,
                                                                render=self.render,
                                                                deterministic=self.deterministic,
                                                                return_episode_rewards=True,
-                                                               plot_before_reset = self.plot_results)
-            PF_episode_rewards, PF_episode_lengths = evaluate_baseline('PF', self.eval_env,
+                                                               plot_before_reset =  False,
+                                                               env_seed= new_seed)
+            PF_episode_rewards, PF_episode_lengths = evaluate_baseline(self.eval_env_list[3],
+                                                               C_ALGO='PF',
                                                                n_eval_episodes=self.n_eval_episodes,
                                                                render=self.render,
                                                                deterministic=self.deterministic,
                                                                return_episode_rewards=True,
-                                                               plot_before_reset = self.plot_results)
+                                                               plot_before_reset = False,
+                                                               env_seed= new_seed)
             if self.log_path is not None:
                 self.evaluations_timesteps.append(self.num_timesteps)
                 self.evaluations_results.append(episode_rewards)

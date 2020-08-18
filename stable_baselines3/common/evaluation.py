@@ -31,7 +31,14 @@ def evaluate_policy(model, env, n_eval_episodes=10, deterministic=True,
 
     episode_rewards, episode_lengths = [], []
     for _ in range(n_eval_episodes):
-        obs = env.reset()
+        try:
+            obs = env.reset(env_seed= kwargs['env_seed']) #if not(env_seed ==-1) else env.reset()
+        except:
+            pass
+        try:
+            obs = env.reset ()
+        except:
+            pass
         done, state = False, None
         episode_reward = 0.0
         episode_length = 0
@@ -56,7 +63,7 @@ def evaluate_policy(model, env, n_eval_episodes=10, deterministic=True,
     return mean_reward, std_reward
 
 
-def evaluate_baseline(C_algo, env, n_eval_episodes=1, deterministic=True,
+def evaluate_baseline(env, n_eval_episodes=1, deterministic=True,
                     render=False, callback=None, reward_threshold=None,
                     return_episode_rewards=False, **kwargs):  # plot_results =False
     """
@@ -83,7 +90,7 @@ def evaluate_baseline(C_algo, env, n_eval_episodes=1, deterministic=True,
 
     episode_rewards, episode_lengths = [], []
     for _ in range(n_eval_episodes):
-        obs = env.reset(C_algo=C_algo)
+        obs = env.reset(env_seed=kwargs['env_seed'], C_ALGO=kwargs['C_ALGO'])#C_algo=C_algo,seed=env_seed)
         done, state = False, None
         episode_reward = 0.0
         episode_length = 0

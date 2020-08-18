@@ -120,6 +120,11 @@ class PPOPolicy(BasePolicy):
 
         self._build(lr_schedule)
 
+        # MSA debugging learning
+        self.dist_hist = []
+        self.obs_hist = []
+        self.action_hist = []
+
     def _get_data(self) -> Dict[str, Any]:
         data = super()._get_data()
 
@@ -211,12 +216,32 @@ class PPOPolicy(BasePolicy):
         :param deterministic: (bool) Whether to sample or use deterministic actions
         :return: (Tuple[th.Tensor, th.Tensor, th.Tensor]) action, value and log probability of the action
         """
-        latent_pi, latent_vf, latent_sde = self._get_latent(obs)
-        # Evaluate the values for the given observations
-        values = self.value_net(latent_vf)
-        distribution = self._get_action_dist_from_latent(latent_pi, latent_sde=latent_sde)
-        actions = distribution.get_actions(deterministic=deterministic)
-        log_prob = distribution.log_prob(actions)
+        try:
+            latent_pi, latent_vf, latent_sde = self._get_latent(obs)
+            # Evaluate the values for the given observations
+            values = self.value_net(latent_vf)
+            distribution = self._get_action_dist_from_latent(latent_pi, latent_sde=latent_sde)
+            actions = distribution.get_actions(deterministic=deterministic)
+            log_prob = distribution.log_prob(actions)
+        except:
+            print('Error: policy forward')
+            latent_pi, latent_vf, latent_sde = self._get_latent (obs)
+
+            pass
+        # MSA Debugging learning
+        try:
+            self.dist_hist.append(distribution.distributions[0].probs.tolist())
+        except:
+            pass
+        try:
+            self.dist_hist.append(distribution.distribution.probs.tolist())
+        except:
+            pass
+        try:
+            self.action_hist.append(actions.tolist())
+            self.obs_hist.append([np.round(x,2) for x in obs.tolist()] )
+        except:
+            pass
         return actions, values, log_prob
 
     def _get_latent(self, obs: th.Tensor) -> Tuple[th.Tensor, th.Tensor, th.Tensor]:
