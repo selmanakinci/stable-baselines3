@@ -120,6 +120,9 @@ class PPO(BaseRLModel):
         if _init_setup_model:
             self._setup_model()
 
+        # MSA debugging learning
+        self.rollout_buffer_hist = []
+
     def _setup_model(self) -> None:
         self._setup_lr_schedule()
         self.set_random_seed(self.seed)
@@ -189,6 +192,88 @@ class PPO(BaseRLModel):
             self._last_obs = new_obs
 
         rollout_buffer.compute_returns_and_advantage(values, dones=dones)
+
+
+        # MSA debugging learning
+        try:
+            import copy
+            c_rb = copy.copy (rollout_buffer)
+            self.rollout_buffer_hist.append(c_rb)
+        except:
+            pass
+        if len(self.rollout_buffer_hist) == 25:
+            import matplotlib.pyplot as plt
+            n_envs = 4
+            V = np.empty((0,n_envs), float)
+            A = np.empty((0,n_envs), float)
+            R = np.empty((0,n_envs), float)
+            lp = np.empty((0,n_envs), float)
+            r = np.empty((0,n_envs), float)
+            a = np.empty((0,n_envs, actions.shape[1]), float)
+            S = np.empty((0,n_envs, new_obs.shape[1]), float)
+            for rb in self.rollout_buffer_hist:
+                V = np.append (V, rb.values, axis=0)
+                A = np.append (A, rb.advantages, axis=0)
+                R = np.append (R, rb.returns, axis=0)
+                lp = np.append (lp, rb.log_probs, axis=0)
+                r = np.append (r, rb.rewards, axis=0)
+                a = np.append (a, rb.actions, axis=0)
+                S = np.append (S, rb.observations, axis=0)
+            plt.plot (V)
+            plt.title ('Values')
+            dir_no = "2"
+            filename = "RL_detailed_plots/"+ dir_no + "/V.png"
+            plt.savefig(filename)
+            plt.close ()
+
+            plt.plot (A)
+            plt.title ('Advantages')
+            filename = "RL_detailed_plots/"+ dir_no + "/A.png"
+            plt.savefig(filename)
+            plt.close ()
+
+            plt.plot (R)
+            plt.title ('Returns')
+            filename = "RL_detailed_plots/"+ dir_no + "/R.png"
+            plt.savefig(filename)
+            plt.close ()
+
+            plt.plot (lp)
+            plt.title ('Log Probs')
+            filename = "RL_detailed_plots/"+ dir_no + "/lp.png"
+            plt.savefig(filename)
+            plt.close ()
+
+            plt.plot (r)
+            plt.title ('rewards')
+            filename = "RL_detailed_plots/"+ dir_no + "/rew.png"
+            plt.savefig(filename)
+            plt.close ()
+
+            try:
+                fig, axes = plt.subplots (nrows=actions.shape[1], ncols=1, figsize=(8, actions.shape[1]))
+                for i in range (actions.shape[1]):
+                    axes[i].plot (a[:, :, i])
+                plt.suptitle ('Actions', y=1)
+                filename = "RL_detailed_plots/" + dir_no + "/act.png"
+                plt.savefig (filename)
+                plt.close()
+            except:
+                plt.plot (a[:, :, 0])
+                plt.title ('Actions')
+                filename = "RL_detailed_plots/" + dir_no + "/act.png"
+                plt.savefig (filename)
+                plt.close()
+
+            fig, axes = plt.subplots (nrows= new_obs.shape[1], ncols=1, figsize=(8, 2*new_obs.shape[1]))
+            for i in range ( new_obs.shape[1]):
+                axes[i].plot (S[:, :, i])
+                axes[i].plot (S[:, :, i])
+            plt.suptitle ('States', y=1)
+            filename = "RL_detailed_plots/" + dir_no + "/S.png"
+            plt.savefig (filename)
+            plt.close()
+
 
         callback.on_rollout_end()
 

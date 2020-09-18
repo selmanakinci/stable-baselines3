@@ -90,6 +90,9 @@ class A2C(PPO):
         if _init_setup_model:
             self._setup_model()
 
+        # MSA debugging learning
+        self.loss_hist = []
+
     def train(self, gradient_steps: int, batch_size: Optional[int] = None) -> None:
         # Update optimizer learning rate
         self._update_learning_rate(self.policy.optimizer)
@@ -128,6 +131,29 @@ class A2C(PPO):
                 entropy_loss = -th.mean(entropy)
 
             loss = policy_loss + self.ent_coef * entropy_loss + self.vf_coef * value_loss
+
+            # MSA debugging learning
+            self.loss_hist.append([loss.item(), policy_loss.item(), value_loss.item(), entropy_loss.item() ])
+            if len (self.loss_hist) == 25:
+                import matplotlib.pyplot as plt
+                l = []
+                pl = []
+                vl = []
+                el = []
+                for losses in self.loss_hist:
+                    l.append (losses[0])
+                    pl.append (losses[1])
+                    vl.append (losses[2])
+                    el.append (losses[3])
+                plt.plot (l, marker="o")
+                plt.plot (pl, marker="o")
+                plt.plot (vl, marker="o")
+                plt.plot (el, marker="o")
+                plt.title ('Losses')
+                plt.legend (['loss', 'policy loss', 'value loss', 'ent loss'])
+                filename = "RL_detailed_plots/2/losses.png"
+                plt.savefig (filename)
+                plt.close()
 
             # Optimization step
             self.policy.optimizer.zero_grad()

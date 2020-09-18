@@ -254,7 +254,7 @@ class CustomRansimCallback(EventCallback):
         if self.eval_freq > 0 and self.n_calls % self.eval_freq == 0:
             # Sync training and eval env if there is VecNormalize
             # sync_envs_normalization(self.training_env, self.eval_env)
-            new_seed = seeding.create_seed()
+            new_seed = 0 # seeding.create_seed()
             episode_rewards, episode_lengths = evaluate_policy(self.model, self.eval_env_list[0],
                                                                n_eval_episodes=self.n_eval_episodes,
                                                                render=self.render,
@@ -276,7 +276,7 @@ class CustomRansimCallback(EventCallback):
                                                                render=self.render,
                                                                deterministic=self.deterministic,
                                                                return_episode_rewards=True,
-                                                               plot_before_reset =  False,
+                                                               plot_before_reset = False,
                                                                env_seed= new_seed)
             PF_episode_rewards, PF_episode_lengths = evaluate_baseline(self.eval_env_list[3],
                                                                C_ALGO='PF',

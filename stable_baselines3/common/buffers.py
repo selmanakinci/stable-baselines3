@@ -254,7 +254,7 @@ class RolloutBuffer(BaseBuffer):
         """
         # convert to numpy
         last_value = last_value.clone().cpu().numpy().flatten()
-
+        use_gae = False
         if use_gae:
             last_gae_lam = 0
             for step in reversed(range(self.buffer_size)):

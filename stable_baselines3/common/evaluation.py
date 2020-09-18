@@ -34,11 +34,7 @@ def evaluate_policy(model, env, n_eval_episodes=10, deterministic=True,
         try:
             obs = env.reset(env_seed= kwargs['env_seed']) #if not(env_seed ==-1) else env.reset()
         except:
-            pass
-        try:
             obs = env.reset ()
-        except:
-            pass
         done, state = False, None
         episode_reward = 0.0
         episode_length = 0
