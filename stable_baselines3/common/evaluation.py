@@ -86,7 +86,7 @@ def evaluate_baseline(env, n_eval_episodes=1, deterministic=True,
 
     episode_rewards, episode_lengths = [], []
     for _ in range(n_eval_episodes):
-        obs = env.reset(env_seed=kwargs['env_seed'], C_ALGO=kwargs['C_ALGO'])#C_algo=C_algo,seed=env_seed)
+        obs = env.reset(env_seed=kwargs['env_seed'], C_ALGO=kwargs['C_ALGO'], no_of_users_list=kwargs['no_of_users_list'])#C_algo=C_algo,seed=env_seed)
         done, state = False, None
         episode_reward = 0.0
         episode_length = 0
